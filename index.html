@@ -159,6 +159,20 @@
     const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec";
     let registros = JSON.parse(localStorage.getItem('power_epec_registros')) || [];
 
+    // Limpia la fecha independientemente de lo que envíe Google Sheets
+    function formatearFechaForzada(f) {
+      if (!f) return '';
+      const str = String(f);
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${mm}/${dd}/${yyyy}`;
+      }
+      return str;
+    }
+
     function guardarUrlScript() {
       const url = document.getElementById('scriptUrlInput').value.trim();
       localStorage.setItem('power_epec_script_url', url);
@@ -189,7 +203,7 @@
       registros.forEach((reg, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${reg.fecha}</td>
+          <td>${formatearFechaForzada(reg.fecha)}</td>
           <td>${reg.hora}</td>
           <td><strong>${reg.equipo}</strong></td>
           <td>${reg.amperes} A</td>
@@ -239,7 +253,7 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(nuevoRegistro)
-        }).then(() => setTimeout(() => sincronizarDatos(false), 1000));
+        });
       }
 
       document.getElementById('amperes').value = '';
@@ -253,15 +267,19 @@
         localStorage.setItem('power_epec_registros', JSON.stringify(registros));
         renderizarTabla();
 
-        // Enviar orden de eliminación real a Google Sheets
         const scriptUrl = obtenerUrlScript();
-        if (scriptUrl && regAEliminar && regAEliminar.rowIndex) {
+        if (scriptUrl && regAEliminar) {
           fetch(scriptUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: "delete", rowIndex: regAEliminar.rowIndex })
-          }).then(() => setTimeout(() => sincronizarDatos(false), 1000));
+            body: JSON.stringify({
+              action: "delete",
+              rowIndex: regAEliminar.rowIndex || (registros.length - index + 1),
+              fecha: regAEliminar.fecha,
+              hora: regAEliminar.hora
+            })
+          });
         }
       } else if (pass !== null) {
         alert("Contraseña incorrecta.");
@@ -276,7 +294,11 @@
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
-            registros = data.reverse(); 
+            registros = data.reverse().map((reg, idx) => ({
+              ...reg,
+              fecha: formatearFechaForzada(reg.fecha),
+              rowIndex: reg.rowIndex || (data.length - idx + 1)
+            }));
             localStorage.setItem('power_epec_registros', JSON.stringify(registros));
             renderizarTabla();
             if (mostrarAlerta) alert("Tabla actualizada correctamente.");
@@ -295,7 +317,7 @@
       const doc = new jsPDF();
       doc.text("Registro Power EPEC, Atlas Gens", 14, 15);
       
-      const tableData = registros.map(r => [r.fecha, r.hora, r.equipo, `${r.amperes} A`, `${r.kw} kW`, `${r.mw} MW`, r.usuario]);
+      const tableData = registros.map(r => [formatearFechaForzada(r.fecha), r.hora, r.equipo, `${r.amperes} A`, `${r.kw} kW`, `${r.mw} MW`, r.usuario]);
       doc.autoTable({
         head: [['Fecha', 'Hora', 'Equipo', 'Amperes', 'kW', 'MW', 'Usuario']],
         body: tableData,
@@ -305,7 +327,16 @@
     }
 
     function exportarExcel() {
-      const ws = XLSX.utils.json_to_sheet(registros.map(({rowIndex, ...rest}) => rest));
+      const datosExcel = registros.map(r => ({
+        Fecha: formatearFechaForzada(r.fecha),
+        Hora: r.hora,
+        Equipo: r.equipo,
+        Amperes: r.amperes,
+        kW: r.kw,
+        MW: r.mw,
+        Usuario: r.usuario
+      }));
+      const ws = XLSX.utils.json_to_sheet(datosExcel);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Registros");
       XLSX.writeFile(wb, "registros_power.xlsx");
@@ -335,7 +366,7 @@
           <div style="display:flex; align-items:center; border-bottom:1px solid #eee; padding: 6px 0;">
             <input type="checkbox" class="chk-calc-item" data-index="${idx}" onchange="calcularSumatoriaModal()" style="width: auto; margin-right: 10px; transform: scale(1.2);">
             <label style="font-size: 12px; cursor: pointer;">
-              <strong>${m.fecha} ${m.hora} - ${m.equipo} (${m.usuario})</strong><br>
+              <strong>${formatearFechaForzada(m.fecha)} ${m.hora} - ${m.equipo} (${m.usuario})</strong><br>
               <span style="color:#555;">${m.amperes} A | ${m.kw} kW | ${m.mw} MW</span>
             </label>
           </div>
