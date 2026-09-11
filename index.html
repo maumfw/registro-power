@@ -65,10 +65,19 @@
           <label for="usuario">Usuario / Operador *</label>
           <select id="usuario" required>
             <option value="" disabled selected>-- Seleccione Usuario --</option>
-            <option value="Mauro">Mauro</option>
+            <option value="Adrián">Adrián</option>
+            <option value="Ángel">Ángel</option>
+            <option value="Armando">Armando</option>
+            <option value="Cristian">Cristian</option>
+            <option value="Daniel">Daniel</option>
+            <option value="Eric">Eric</option>
+            <option value="Francisco">Francisco</option>
+            <option value="José">José</option>
+            <option value="Jesús">Jesús</option>
             <option value="Koby">Koby</option>
-            <option value="Operador 1">Operador 1</option>
-            <option value="Operador 2">Operador 2</option>
+            <option value="Mauro">Mauro</option>
+            <option value="Miguel">Miguel</option>
+            <option value="Ramiro">Ramiro</option>
           </select>
         </div>
 
@@ -76,11 +85,12 @@
           <label for="equipo">Equipo / Opción *</label>
           <select id="equipo" required>
             <option value="" disabled selected>-- Seleccione Equipo --</option>
-            <option value="MSB">MSB</option>
-            <option value="MSD">MSD</option>
-            <option value="FLUTEC">FLUTEC</option>
-            <option value="BAY7&8">BAY7&8</option>
             <option value="BAY5&6">BAY5&6</option>
+            <option value="BAY7&8">BAY7&8</option>
+            <option value="FLUTEC">FLUTEC</option>
+            <option value="MSB">MSB</option>
+            <option value="MSC">MSC</option>
+            <option value="MSD">MSD</option>
             <option value="MST1">MST1 (380V)</option>
             <option value="MST2">MST2 (380V)</option>
           </select>
@@ -98,7 +108,7 @@
     <!-- Encabezado de la Tabla -->
     <div class="table-header">
       <h3 style="margin:0; color:#333;">Registros Compartidos en Tiempo Real</h3>
-      <button type="button" class="btn-sync" onclick="sincronizarDatos()">🔄 Actualizar Tabla</button>
+      <button type="button" class="btn-sync" onclick="sincronizarDatos(true)">🔄 Actualizar Tabla</button>
     </div>
 
     <!-- Tabla en Tiempo Real -->
@@ -156,6 +166,7 @@
   </div>
 
   <script>
+    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec";
     let registros = JSON.parse(localStorage.getItem('power_epec_registros')) || [];
 
     function guardarUrlScript() {
@@ -164,7 +175,7 @@
     }
 
     function obtenerUrlScript() {
-      return localStorage.getItem('power_epec_script_url') || document.getElementById('scriptUrlInput').value.trim();
+      return localStorage.getItem('power_epec_script_url') || DEFAULT_SCRIPT_URL;
     }
 
     function calcularPotencia(equipo, amperes) {
@@ -181,6 +192,11 @@
     function renderizarTabla() {
       const tbody = document.getElementById('tbodyRegistros');
       tbody.innerHTML = '';
+
+      if (registros.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#777;">Cargando o sin registros disponibles...</td></tr>';
+        return;
+      }
 
       registros.forEach((reg, index) => {
         const tr = document.createElement('tr');
@@ -248,20 +264,19 @@
       }
     }
 
-    function sincronizarDatos() {
+    function sincronizarDatos(mostrarAlerta = false) {
       const scriptUrl = obtenerUrlScript();
-      if (!scriptUrl) {
-        alert("Agrega la URL de Google Apps Script primero.");
-        return;
-      }
-      
+      if (!scriptUrl) return;
+
       fetch(scriptUrl)
         .then(res => res.json())
         .then(data => {
-          if (Array.isArray(data)) {
-            // Reemplazar o combinar con la hoja de Google Sheets
+          if (Array.isArray(data) && data.length > 0) {
             registros = data.reverse(); 
             localStorage.setItem('power_epec_registros', JSON.stringify(registros));
+            renderizarTabla();
+            if (mostrarAlerta) alert("Tabla actualizada correctamente.");
+          } else {
             renderizarTabla();
           }
         })
@@ -351,14 +366,14 @@
       document.getElementById('res-calc-mw').innerText = totalMW.toFixed(4);
     }
 
-    // Inicio
-    document.addEventListener('DOMContentLoaded', () => {
+    // Auto-Carga al ingresar a la página
+    window.onload = function() {
       const urlGuardada = localStorage.getItem('power_epec_script_url');
-      if (urlGuardada) {
-        document.getElementById('scriptUrlInput').value = urlGuardada;
-      }
-      sincronizarDatos();
-    });
+      document.getElementById('scriptUrlInput').value = urlGuardada || DEFAULT_SCRIPT_URL;
+      
+      renderizarTabla();
+      sincronizarDatos(false);
+    };
   </script>
 </body>
 </html>
