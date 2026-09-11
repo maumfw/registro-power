@@ -221,7 +221,8 @@
       const amperes = parseFloat(document.getElementById('amperes').value) || 0;
 
       const ahora = new Date();
-      const fecha = ahora.toLocaleDateString('es-AR');
+      // Formato: Mes / Día / Año (en-US)
+      const fecha = ahora.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
       const hora = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
       const pot = calcularPotencia(equipo, amperes);
