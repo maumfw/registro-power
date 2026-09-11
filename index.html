@@ -249,8 +249,26 @@
     }
 
     function sincronizarDatos() {
-      renderizarTabla();
-      alert("Tabla actualizada correctamente.");
+      const scriptUrl = obtenerUrlScript();
+      if (!scriptUrl) {
+        alert("Agrega la URL de Google Apps Script primero.");
+        return;
+      }
+      
+      fetch(scriptUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            // Reemplazar o combinar con la hoja de Google Sheets
+            registros = data.reverse(); 
+            localStorage.setItem('power_epec_registros', JSON.stringify(registros));
+            renderizarTabla();
+          }
+        })
+        .catch(err => {
+          console.error("Error al sincronizar con Sheets:", err);
+          renderizarTabla();
+        });
     }
 
     // Funciones de Exportación
@@ -339,7 +357,7 @@
       if (urlGuardada) {
         document.getElementById('scriptUrlInput').value = urlGuardada;
       }
-      renderizarTabla();
+      sincronizarDatos();
     });
   </script>
 </body>
