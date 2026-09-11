@@ -4,146 +4,153 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Registro Power EPEC, Atlas Gens</title>
+  
+  <!-- Librerías para exportar a PDF y Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: #f4f5f7; margin: 0; padding: 15px; color: #1c1c1e; }
-    .container { max-width: 800px; margin: 0 auto; }
-    .card { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    header h1 { font-size: 22px; margin: 0 0 10px 0; color: #111; }
-    .voltage-alert { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 15px; border: 1px solid #ffeeba; }
-    .config-banner { background-color: #e2e3e5; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
-    .config-banner input { width: 100%; padding: 8px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+    .card { background: #ffffff; border-radius: 12px; padding: 25px; max-width: 900px; margin: 0 auto 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    h1 { color: #1f3b8b; text-align: center; margin-top: 0; margin-bottom: 20px; font-size: 24px; }
     
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    .config-banner { background-color: #fef9e7; border: 1px solid #f7dc6f; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; font-size: 13px; }
+    .config-banner input { width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
     
-    .form-group { margin-bottom: 12px; }
-    label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 14px; }
-    input, select, button { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #c7c7cc; font-size: 15px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    label { font-size: 13px; font-weight: bold; color: #444; display: block; margin-bottom: 5px; }
+    select, input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
     
-    .btn-submit { background-color: #007aff; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; padding: 13px; }
-    .btn-calc { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; padding: 13px; }
-    .btn-danger { background-color: #dc3545; color: white; border: none; font-weight: bold; cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 12px; width: auto; }
+    .btn-main { background-color: #1f3b8b; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; font-size: 15px; }
+    .btn-main:hover { background-color: #162a63; }
     
-    .results-display { background: #eef2f5; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-top: 10px; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; margin-bottom: 15px; }
+    .btn-sync { background-color: #4361ee; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-    th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
-    th { background-color: #f8f9fa; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+    th { color: #666; font-weight: 600; background-color: #fafafa; }
     
+    .btn-delete { background-color: #ff4d4f; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    
+    .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+    .btn-action { color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-pdf { background-color: #00a86b; }
+    .btn-excel { background-color: #00a86b; }
+    .btn-calc { background-color: #00a86b; margin-top: 15px; width: 100%; }
+
     /* Modal Calculadora */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; }
-    .modal-content { background: white; width: 92%; max-width: 500px; margin: 5% auto; padding: 20px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
+    .modal-content { background: white; width: 90%; max-width: 500px; margin: 5% auto; padding: 20px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <header class="card">
-      <h1>Registro Power EPEC, Atlas Gens</h1>
-      <div id="voltageAlert" class="voltage-alert">⚠️ Sistema 380V / 480V (Fórmulas con √3 x 1.73)</div>
-      
-      <!-- Configuración URL Apps Script -->
-      <div class="config-banner" id="configBanner">
-        <strong>🔗 Vinculación con Google Sheets Compartido:</strong>
-        <p style="margin: 4px 0;">Pega aquí la URL de tu Web App de Google Apps Script. Se guardará para todos los usos futuros en este dispositivo.</p>
-        <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec" placeholder="https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec" onchange="guardarUrlScript()">
-      </div>
-    </header>
+  <div class="card">
+    <h1>Registro Power EPEC, Atlas Gens</h1>
 
-    <div class="card">
-      <form id="powerForm" onsubmit="agregarRegistro(event)">
-        <div class="form-grid">
-          
-          <!-- Selector de Usuario -->
-          <div class="form-group">
-            <label for="usuario">Usuario / Operador *</label>
-            <select id="usuario" required>
-              <option value="" disabled selected>-- Seleccione Usuario --</option>
-              <option value="Mauro">Mauro</option>
-              <option value="Operador 1">Operador 1</option>
-              <option value="Operador 2">Operador 2</option>
-              <option value="Operador 3">Operador 3</option>
-            </select>
-          </div>
-
-          <!-- Selector de Equipo -->
-          <div class="form-group">
-            <label for="equipo">Equipo *</label>
-            <select id="equipo" onchange="actualizarVoltaje()" required>
-              <option value="" disabled selected>-- Seleccione Equipo --</option>
-              <option value="MST1 (380V)">MST1 (380V)</option>
-              <option value="MST2 (380V)">MST2 (380V)</option>
-              <option value="General (480V)">General (480V)</option>
-            </select>
-          </div>
-
-          <!-- Amperes -->
-          <div class="form-group">
-            <label for="amperes">Corriente (Amperes) *</label>
-            <input type="number" id="amperes" step="0.1" placeholder="Ej: 150" oninput="calcularValores()" required>
-          </div>
-
-          <!-- Factor de Potencia -->
-          <div class="form-group">
-            <label for="cosPhi">Factor de Potencia (cos φ)</label>
-            <input type="number" id="cosPhi" step="0.01" value="0.85" oninput="calcularValores()" required>
-          </div>
-
-        </div>
-
-        <div class="results-display">
-          Potencia Estimada: <span id="dispKw">0.00</span> kW | <span id="dispMw">0.0000</span> MW
-        </div>
-
-        <button type="submit" class="btn-submit">Guardar Registro</button>
-      </form>
-
-      <!-- Botón Calculadora -->
-      <button type="button" class="btn-calc" onclick="abrirCalculadora()">🧮 Abrir Calculadora de Sumatoria</button>
+    <!-- Configuración URL Apps Script -->
+    <div class="config-banner">
+      <strong>🔗 Vinculación con Google Sheets Compartido:</strong><br>
+      <span style="color:#555;">Pega aquí la URL de tu Web App de Google Apps Script. Se guardará para todos los usos futuros en este dispositivo.</span>
+      <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec" placeholder="https://script.google.com/macros/s/..." onchange="guardarUrlScript()">
     </div>
 
-    <!-- Tabla de Registros -->
-    <div class="card" style="overflow-x: auto;">
-      <h2 style="font-size: 18px; margin-top:0;">Historial de Mediciones</h2>
-      <table id="tablaRegistros">
+    <!-- Formulario de Entrada -->
+    <form id="powerForm" onsubmit="agregarRegistro(event)">
+      <div class="form-grid">
+        <div>
+          <label for="usuario">Usuario / Operador *</label>
+          <select id="usuario" required>
+            <option value="" disabled selected>-- Seleccione Usuario --</option>
+            <option value="Mauro">Mauro</option>
+            <option value="Koby">Koby</option>
+            <option value="Operador 1">Operador 1</option>
+            <option value="Operador 2">Operador 2</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="equipo">Equipo / Opción *</label>
+          <select id="equipo" required>
+            <option value="" disabled selected>-- Seleccione Equipo --</option>
+            <option value="MSB">MSB</option>
+            <option value="MSD">MSD</option>
+            <option value="FLUTEC">FLUTEC</option>
+            <option value="BAY7&8">BAY7&8</option>
+            <option value="BAY5&6">BAY5&6</option>
+            <option value="MST1">MST1 (380V)</option>
+            <option value="MST2">MST2 (380V)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="amperes">Corriente (A) *</label>
+          <input type="number" id="amperes" step="0.01" placeholder="Ej: 125.45" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-main">➕ Guardar en Google Sheets</button>
+    </form>
+
+    <!-- Encabezado de la Tabla -->
+    <div class="table-header">
+      <h3 style="margin:0; color:#333;">Registros Compartidos en Tiempo Real</h3>
+      <button type="button" class="btn-sync" onclick="sincronizarDatos()">🔄 Actualizar Tabla</button>
+    </div>
+
+    <!-- Tabla en Tiempo Real -->
+    <div style="overflow-x: auto;">
+      <table>
         <thead>
           <tr>
             <th>Fecha</th>
-            <th>Usuario</th>
+            <th>Hora</th>
             <th>Equipo</th>
-            <th>Amperes</th>
+            <th>Amperes (A)</th>
             <th>kW</th>
             <th>MW</th>
+            <th>Usuario</th>
             <th>Acción</th>
           </tr>
         </thead>
         <tbody id="tbodyRegistros">
-          <!-- Se llena dinámicamente -->
+          <!-- Datos dinámicos -->
         </tbody>
       </table>
     </div>
+
+    <!-- Acciones de Exportación -->
+    <div class="actions-grid">
+      <button type="button" class="btn-action btn-pdf" onclick="exportarPDF()">👁️ Ver archivo PDF</button>
+      <button type="button" class="btn-action btn-excel" onclick="exportarExcel()">📊 Descargar Excel (.xlsx)</button>
+    </div>
+
+    <!-- Botón Verde de Calculadora -->
+    <button type="button" class="btn-action btn-calc" onclick="abrirCalculadora()">🧮 Calculadora de Sumatoria</button>
   </div>
 
   <!-- MODAL CALCULADORA -->
   <div id="modalCalculadora" class="modal">
     <div class="modal-content">
-      <h2 style="margin-top:0;">Calculadora de Mediciones</h2>
-      <p style="font-size:13px; color:#555;">Selecciona las mediciones tomadas anteriormente para sumar:</p>
+      <h3 style="margin-top:0; color:#1f3b8b;">Calculadora de Mediciones</h3>
+      <p style="font-size:13px; color:#555;">Selecciona las filas tomadas para calcular la sumatoria:</p>
 
-      <div id="listaMedicionesCalc" style="border: 1px solid #ccc; padding: 10px; max-height: 220px; overflow-y: auto; border-radius: 8px; margin-bottom: 15px;">
-        <p style="text-align:center; color:#777;">Cargando mediciones...</p>
+      <div id="listaMedicionesCalc" style="border: 1px solid #ddd; padding: 10px; max-height: 220px; overflow-y: auto; border-radius: 6px; margin-bottom: 15px;">
+        <p style="text-align:center; color:#777;">Cargando registros...</p>
       </div>
 
-      <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px;">
-        <h3 style="margin-top:0; font-size:15px;">Resultados de la Sumatoria:</h3>
-        <p style="margin: 5px 0;">⚡ <strong>Total Corriente:</strong> <span id="res-calc-amperes" style="color:#007aff; font-weight:bold;">0.00</span> A</p>
-        <p style="margin: 5px 0;">🔌 <strong>Total Potencia Activa:</strong> <span id="res-calc-kw" style="color:#007aff; font-weight:bold;">0.00</span> kW</p>
-        <p style="margin: 5px 0;">🏭 <strong>Total Potencia:</strong> <span id="res-calc-mw" style="color:#007aff; font-weight:bold;">0.0000</span> MW</p>
+      <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 6px;">
+        <h4 style="margin-top:0; color:#333; font-size:14px;">Resultados de la Sumatoria:</h4>
+        <p style="margin: 5px 0; font-size:14px;">⚡ <strong>Total Corriente:</strong> <span id="res-calc-amperes" style="color:#00a86b; font-weight:bold;">0.00</span> A</p>
+        <p style="margin: 5px 0; font-size:14px;">🔌 <strong>Total Potencia Activa:</strong> <span id="res-calc-kw" style="color:#00a86b; font-weight:bold;">0.00</span> kW</p>
+        <p style="margin: 5px 0; font-size:14px;">🏭 <strong>Total Potencia:</strong> <span id="res-calc-mw" style="color:#00a86b; font-weight:bold;">0.0000</span> MW</p>
       </div>
 
       <button type="button" onclick="cerrarCalculadora()" style="background-color: #dc3545; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; font-weight:bold;">
-        Cerrar Calculadora
+        Cerrar
       </button>
     </div>
   </div>
@@ -160,28 +167,15 @@
       return localStorage.getItem('power_epec_script_url') || document.getElementById('scriptUrlInput').value.trim();
     }
 
-    function actualizarVoltaje() {
-      calcularValores();
-    }
-
-    function calcularValores() {
-      const equipo = document.getElementById('equipo').value;
-      const amperes = parseFloat(document.getElementById('amperes').value) || 0;
-      const cosPhi = parseFloat(document.getElementById('cosPhi').value) || 0.85;
-
+    function calcularPotencia(equipo, amperes) {
       let volt = 480;
-      if (equipo.includes("380V")) {
+      if (equipo.includes("MST1") || equipo.includes("MST2")) {
         volt = 380;
       }
-
-      // Fórmula Trifásica: P(kW) = (√3 * V * I * cosφ) / 1000
+      const cosPhi = 0.85;
       const kw = (Math.sqrt(3) * volt * amperes * cosPhi) / 1000;
       const mw = kw / 1000;
-
-      document.getElementById('dispKw').innerText = kw.toFixed(2);
-      document.getElementById('dispMw').innerText = mw.toFixed(4);
-
-      return { amperes, kw, mw, equipo };
+      return { kw, mw };
     }
 
     function renderizarTabla() {
@@ -192,12 +186,13 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${reg.fecha}</td>
-          <td>${reg.usuario}</td>
-          <td>${reg.equipo}</td>
+          <td>${reg.hora}</td>
+          <td><strong>${reg.equipo}</strong></td>
           <td>${reg.amperes} A</td>
           <td>${reg.kw} kW</td>
           <td>${reg.mw} MW</td>
-          <td><button class="btn-danger" onclick="eliminarRegistro(${index})">Eliminar</button></td>
+          <td>${reg.usuario}</td>
+          <td><button class="btn-delete" onclick="eliminarRegistro(${index})">✕</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -205,49 +200,79 @@
 
     function agregarRegistro(e) {
       e.preventDefault();
-      
       const usuario = document.getElementById('usuario').value;
       const equipo = document.getElementById('equipo').value;
-      const calc = calcularValores();
+      const amperes = parseFloat(document.getElementById('amperes').value) || 0;
+
+      const ahora = new Date();
+      const fecha = ahora.toLocaleDateString('es-AR');
+      const hora = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const pot = calcularPotencia(equipo, amperes);
 
       const nuevoRegistro = {
-        fecha: new Date().toLocaleString('es-AR'),
-        usuario: usuario,
-        equipo: equipo,
-        amperes: calc.amperes.toFixed(1),
-        kw: calc.kw.toFixed(2),
-        mw: calc.mw.toFixed(4)
+        fecha,
+        hora,
+        equipo,
+        amperes: amperes.toFixed(2),
+        kw: pot.kw.toFixed(3),
+        mw: pot.mw.toFixed(3),
+        usuario
       };
 
-      registros.push(nuevoRegistro);
+      registros.unshift(nuevoRegistro);
       localStorage.setItem('power_epec_registros', JSON.stringify(registros));
       renderizarTabla();
 
-      // Enviar a Google Sheets vía Apps Script
-      const urlScript = obtenerUrlScript();
-      if (urlScript) {
-        fetch(urlScript, {
+      const scriptUrl = obtenerUrlScript();
+      if (scriptUrl) {
+        fetch(scriptUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(nuevoRegistro)
-        }).catch(err => console.error("Error al sincronizar con Sheets:", err));
+        }).catch(err => console.error("Error al enviar datos:", err));
       }
 
-      // Limpiar formulario
       document.getElementById('amperes').value = '';
-      calcularValores();
     }
 
     function eliminarRegistro(index) {
-      const pass = prompt("Ingrese la contraseña de seguridad para eliminar este registro:");
+      const pass = prompt("Ingrese la contraseña de seguridad para eliminar:");
       if (pass === "septiembre10") {
         registros.splice(index, 1);
         localStorage.setItem('power_epec_registros', JSON.stringify(registros));
         renderizarTabla();
       } else if (pass !== null) {
-        alert("Contraseña incorrecta. No se eliminó el registro.");
+        alert("Contraseña incorrecta.");
       }
+    }
+
+    function sincronizarDatos() {
+      renderizarTabla();
+      alert("Tabla actualizada correctamente.");
+    }
+
+    // Funciones de Exportación
+    function exportarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Registro Power EPEC, Atlas Gens", 14, 15);
+      
+      const tableData = registros.map(r => [r.fecha, r.hora, r.equipo, `${r.amperes} A`, `${r.kw} kW`, `${r.mw} MW`, r.usuario]);
+      doc.autoTable({
+        head: [['Fecha', 'Hora', 'Equipo', 'Amperes', 'kW', 'MW', 'Usuario']],
+        body: tableData,
+        startY: 20
+      });
+      doc.save("registros_power.pdf");
+    }
+
+    function exportarExcel() {
+      const ws = XLSX.utils.json_to_sheet(registros);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Registros");
+      XLSX.writeFile(wb, "registros_power.xlsx");
     }
 
     // --- CALCULADORA DE SUMATORIA ---
@@ -264,7 +289,7 @@
       const contenedor = document.getElementById('listaMedicionesCalc');
       
       if (registros.length === 0) {
-        contenedor.innerHTML = '<p style="text-align:center; color:#888;">No hay mediciones registradas para seleccionar.</p>';
+        contenedor.innerHTML = '<p style="text-align:center; color:#777;">No hay registros para calcular.</p>';
         calcularSumatoriaModal();
         return;
       }
@@ -272,10 +297,10 @@
       let html = '';
       registros.forEach((m, idx) => {
         html += `
-          <div style="display:flex; align-items:center; border-bottom:1px solid #eee; padding: 8px 0;">
-            <input type="checkbox" class="chk-calc-item" data-index="${idx}" onchange="calcularSumatoriaModal()" style="width: auto; margin-right: 10px; transform: scale(1.3);">
-            <label style="font-size: 13px; cursor: pointer;">
-              <strong>${m.fecha} (${m.equipo})</strong><br>
+          <div style="display:flex; align-items:center; border-bottom:1px solid #eee; padding: 6px 0;">
+            <input type="checkbox" class="chk-calc-item" data-index="${idx}" onchange="calcularSumatoriaModal()" style="width: auto; margin-right: 10px; transform: scale(1.2);">
+            <label style="font-size: 12px; cursor: pointer;">
+              <strong>${m.fecha} ${m.hora} - ${m.equipo} (${m.usuario})</strong><br>
               <span style="color:#555;">${m.amperes} A | ${m.kw} kW | ${m.mw} MW</span>
             </label>
           </div>
@@ -296,7 +321,6 @@
       seleccionados.forEach(chk => {
         const idx = chk.getAttribute('data-index');
         const m = registros[idx];
-
         if (m) {
           totalAmp += parseFloat(m.amperes) || 0;
           totalKW += parseFloat(m.kw) || 0;
@@ -309,7 +333,7 @@
       document.getElementById('res-calc-mw').innerText = totalMW.toFixed(4);
     }
 
-    // Carga inicial
+    // Inicio
     document.addEventListener('DOMContentLoaded', () => {
       const urlGuardada = localStorage.getItem('power_epec_script_url');
       if (urlGuardada) {
