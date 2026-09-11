@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Registro Power EPEC, Atlas Gens</title>
   
-  <!-- Librerías para exportar a PDF y Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -41,7 +40,6 @@
     .btn-excel { background-color: #00a86b; }
     .btn-calc { background-color: #00a86b; margin-top: 15px; width: 100%; }
 
-    /* Modal Calculadora */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; }
     .modal-content { background: white; width: 90%; max-width: 500px; margin: 5% auto; padding: 20px; border-radius: 12px; max-height: 85vh; overflow-y: auto; }
   </style>
@@ -51,14 +49,12 @@
   <div class="card">
     <h1>Registro Power EPEC, Atlas Gens</h1>
 
-    <!-- Configuración URL Apps Script -->
     <div class="config-banner">
       <strong>🔗 Vinculación con Google Sheets Compartido:</strong><br>
       <span style="color:#555;">Pega aquí la URL de tu Web App de Google Apps Script. Se guardará para todos los usos futuros en este dispositivo.</span>
       <input type="text" id="scriptUrlInput" value="https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec" placeholder="https://script.google.com/macros/s/..." onchange="guardarUrlScript()">
     </div>
 
-    <!-- Formulario de Entrada -->
     <form id="powerForm" onsubmit="agregarRegistro(event)">
       <div class="form-grid">
         <div>
@@ -105,13 +101,11 @@
       <button type="submit" class="btn-main">➕ Guardar en Google Sheets</button>
     </form>
 
-    <!-- Encabezado de la Tabla -->
     <div class="table-header">
       <h3 style="margin:0; color:#333;">Registros Compartidos en Tiempo Real</h3>
       <button type="button" class="btn-sync" onclick="sincronizarDatos(true)">🔄 Actualizar Tabla</button>
     </div>
 
-    <!-- Tabla en Tiempo Real -->
     <div style="overflow-x: auto;">
       <table>
         <thead>
@@ -127,22 +121,18 @@
           </tr>
         </thead>
         <tbody id="tbodyRegistros">
-          <!-- Datos dinámicos -->
         </tbody>
       </table>
     </div>
 
-    <!-- Acciones de Exportación -->
     <div class="actions-grid">
       <button type="button" class="btn-action btn-pdf" onclick="exportarPDF()">👁️ Ver archivo PDF</button>
       <button type="button" class="btn-action btn-excel" onclick="exportarExcel()">📊 Descargar Excel (.xlsx)</button>
     </div>
 
-    <!-- Botón Verde de Calculadora -->
     <button type="button" class="btn-action btn-calc" onclick="abrirCalculadora()">🧮 Calculadora de Sumatoria</button>
   </div>
 
-  <!-- MODAL CALCULADORA -->
   <div id="modalCalculadora" class="modal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:#1f3b8b;">Calculadora de Mediciones</h3>
@@ -169,19 +159,6 @@
     const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8mBDeuXcxRKzWQ6CePE8wpgAXMJXjM80xX6VYulrk93bf3JdeBIX0nhceazl2ljSAMA/exec";
     let registros = JSON.parse(localStorage.getItem('power_epec_registros')) || [];
 
-    function formatearFechaLimpia(f) {
-      if (!f) return '';
-      // Si viene una fecha de sistema larga (Ej: Mon Nov 09 2026...)
-      const d = new Date(f);
-      if (!isNaN(d.getTime()) && String(f).includes("GMT")) {
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const yyyy = d.getFullYear();
-        return `${mm}/${dd}/${yyyy}`;
-      }
-      return f;
-    }
-
     function guardarUrlScript() {
       const url = document.getElementById('scriptUrlInput').value.trim();
       localStorage.setItem('power_epec_script_url', url);
@@ -193,9 +170,7 @@
 
     function calcularPotencia(equipo, amperes) {
       let volt = 480;
-      if (equipo.includes("MST1") || equipo.includes("MST2")) {
-        volt = 380;
-      }
+      if (equipo.includes("MST1") || equipo.includes("MST2")) volt = 380;
       const cosPhi = 0.85;
       const kw = (Math.sqrt(3) * volt * amperes * cosPhi) / 1000;
       const mw = kw / 1000;
@@ -214,7 +189,7 @@
       registros.forEach((reg, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${formatearFechaLimpia(reg.fecha)}</td>
+          <td>${reg.fecha}</td>
           <td>${reg.hora}</td>
           <td><strong>${reg.equipo}</strong></td>
           <td>${reg.amperes} A</td>
@@ -264,7 +239,7 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(nuevoRegistro)
-        }).catch(err => console.error("Error al enviar datos:", err));
+        }).then(() => setTimeout(() => sincronizarDatos(false), 1000));
       }
 
       document.getElementById('amperes').value = '';
@@ -273,9 +248,21 @@
     function eliminarRegistro(index) {
       const pass = prompt("Ingrese la contraseña de seguridad para eliminar:");
       if (pass === "septiembre10") {
+        const regAEliminar = registros[index];
         registros.splice(index, 1);
         localStorage.setItem('power_epec_registros', JSON.stringify(registros));
         renderizarTabla();
+
+        // Enviar orden de eliminación real a Google Sheets
+        const scriptUrl = obtenerUrlScript();
+        if (scriptUrl && regAEliminar && regAEliminar.rowIndex) {
+          fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: "delete", rowIndex: regAEliminar.rowIndex })
+          }).then(() => setTimeout(() => sincronizarDatos(false), 1000));
+        }
       } else if (pass !== null) {
         alert("Contraseña incorrecta.");
       }
@@ -289,10 +276,7 @@
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
-            registros = data.reverse().map(reg => ({
-              ...reg,
-              fecha: formatearFechaLimpia(reg.fecha)
-            }));
+            registros = data.reverse(); 
             localStorage.setItem('power_epec_registros', JSON.stringify(registros));
             renderizarTabla();
             if (mostrarAlerta) alert("Tabla actualizada correctamente.");
@@ -301,18 +285,17 @@
           }
         })
         .catch(err => {
-          console.error("Error al sincronizar con Sheets:", err);
+          console.error("Error al sincronizar:", err);
           renderizarTabla();
         });
     }
 
-    // Funciones de Exportación
     function exportarPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       doc.text("Registro Power EPEC, Atlas Gens", 14, 15);
       
-      const tableData = registros.map(r => [formatearFechaLimpia(r.fecha), r.hora, r.equipo, `${r.amperes} A`, `${r.kw} kW`, `${r.mw} MW`, r.usuario]);
+      const tableData = registros.map(r => [r.fecha, r.hora, r.equipo, `${r.amperes} A`, `${r.kw} kW`, `${r.mw} MW`, r.usuario]);
       doc.autoTable({
         head: [['Fecha', 'Hora', 'Equipo', 'Amperes', 'kW', 'MW', 'Usuario']],
         body: tableData,
@@ -322,17 +305,12 @@
     }
 
     function exportarExcel() {
-      const datosLimpios = registros.map(r => ({
-        ...r,
-        fecha: formatearFechaLimpia(r.fecha)
-      }));
-      const ws = XLSX.utils.json_to_sheet(datosLimpios);
+      const ws = XLSX.utils.json_to_sheet(registros.map(({rowIndex, ...rest}) => rest));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Registros");
       XLSX.writeFile(wb, "registros_power.xlsx");
     }
 
-    // --- CALCULADORA DE SUMATORIA ---
     function abrirCalculadora() {
       document.getElementById('modalCalculadora').style.display = 'block';
       renderizarListaCalculadora();
@@ -357,7 +335,7 @@
           <div style="display:flex; align-items:center; border-bottom:1px solid #eee; padding: 6px 0;">
             <input type="checkbox" class="chk-calc-item" data-index="${idx}" onchange="calcularSumatoriaModal()" style="width: auto; margin-right: 10px; transform: scale(1.2);">
             <label style="font-size: 12px; cursor: pointer;">
-              <strong>${formatearFechaLimpia(m.fecha)} ${m.hora} - ${m.equipo} (${m.usuario})</strong><br>
+              <strong>${m.fecha} ${m.hora} - ${m.equipo} (${m.usuario})</strong><br>
               <span style="color:#555;">${m.amperes} A | ${m.kw} kW | ${m.mw} MW</span>
             </label>
           </div>
@@ -369,10 +347,7 @@
     }
 
     function calcularSumatoriaModal() {
-      let totalAmp = 0;
-      let totalKW = 0;
-      let totalMW = 0;
-
+      let totalAmp = 0, totalKW = 0, totalMW = 0;
       const seleccionados = document.querySelectorAll('.chk-calc-item:checked');
 
       seleccionados.forEach(chk => {
@@ -390,7 +365,6 @@
       document.getElementById('res-calc-mw').innerText = totalMW.toFixed(4);
     }
 
-    // Auto-Carga al ingresar a la página
     window.onload = function() {
       const urlGuardada = localStorage.getItem('power_epec_script_url');
       document.getElementById('scriptUrlInput').value = urlGuardada || DEFAULT_SCRIPT_URL;
